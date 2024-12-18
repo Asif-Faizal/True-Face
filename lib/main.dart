@@ -5,14 +5,10 @@ import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // Get available cameras
   final cameras = await availableCameras();
-
-  // Select front camera
   final frontCamera = cameras.firstWhere(
     (camera) => camera.lensDirection == CameraLensDirection.front,
-    orElse: () => cameras.first, // Fallback to first camera if no front camera
+    orElse: () => cameras.first,
   );
 
   runApp(MyApp(camera: frontCamera));
@@ -45,6 +41,8 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
   FaceDetector? _faceDetector;
   bool _isDetecting = false;
   bool _isFaceDetected = false;
+  bool _eyesClosedDetected = false;
+  bool _headMovedRight = false;
 
   @override
   void initState() {
@@ -55,44 +53,38 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
 
   Future<void> _initializeCamera() async {
     try {
-      // Dispose of existing controller if any
       if (_controller != null) {
         await _controller!.dispose();
       }
 
-      // Reinitialize face detector
       _faceDetector ??= FaceDetector(
         options: FaceDetectorOptions(
           performanceMode: FaceDetectorMode.accurate,
           enableContours: false,
           enableTracking: false,
-          enableLandmarks: true,  // Ensure landmarks are enabled
+          enableLandmarks: true,
           enableClassification: true,
         ),
       );
 
-      // Create new camera controller
       _controller = CameraController(
         widget.camera,
         ResolutionPreset.ultraHigh,
         imageFormatGroup: ImageFormatGroup.jpeg,
       );
 
-      // Add listener to detect errors
       _controller!.addListener(() {
         if (mounted && _controller!.value.hasError) {
-          print('Camera error: ${_controller!.value.errorDescription}');
+          debugPrint('Camera error: ${_controller!.value.errorDescription}');
         }
       });
-
-      // Initialize the controller and start image stream
       await _controller!.initialize();
       if (mounted) {
-        setState(() {}); // Trigger UI rebuild after initialization
+        setState(() {});
         await _controller!.startImageStream(_processCameraImage);
       }
     } catch (e) {
-      print('Camera initialization error: $e');
+      debugPrint('Camera initialization error: $e');
     }
   }
 
@@ -101,10 +93,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
     _isDetecting = true;
 
     try {
-      // Convert image to InputImage for ML Kit
       final InputImage inputImage = _getInputImage(cameraImage);
-
-      // Detect faces
       final List<Face> faces = await _faceDetector!.processImage(inputImage);
 
       if (mounted) {
@@ -116,20 +105,31 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
       if (faces.isNotEmpty) {
         final face = faces.first;
 
-        // Log eye probabilities for debugging
         final leftEyeOpenProbability = face.leftEyeOpenProbability ?? 1.0;
         final rightEyeOpenProbability = face.rightEyeOpenProbability ?? 1.0;
 
-        print('Left Eye Open Probability: $leftEyeOpenProbability');
-        print('Right Eye Open Probability: $rightEyeOpenProbability');
-
-        // Adjust the threshold as needed
+        debugPrint('Left Eye Open Probability: $leftEyeOpenProbability');
+        debugPrint('Right Eye Open Probability: $rightEyeOpenProbability');
         bool areEyesClosed =
             leftEyeOpenProbability < 0.3 && rightEyeOpenProbability < 0.3;
 
-        if (areEyesClosed) {
-          // Navigate to the next page immediately when eyes are closed
+        if (areEyesClosed && !_eyesClosedDetected) {
+          setState(() {
+            _eyesClosedDetected = true;
+          });
           _onEyesClosed();
+        }
+
+        final headRotation = face.headEulerAngleY ?? 0.0;
+        debugPrint('Head Rotation: $headRotation');
+
+        // If head is tilted right (consider threshold)
+        if (headRotation > 25.0 && !_headMovedRight) {
+          setState(() {
+            _headMovedRight = true;
+          });
+          _onHeadMovedRight();
+          await _controller!.stopImageStream();
         }
       }
     } catch (e) {
@@ -140,13 +140,48 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
   }
 
   void _onEyesClosed() {
-    // Navigate to the next page when eyes are closed
+    if (mounted) {
+      showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: const Text('Eyes Closed Detected'),
+            content: const Text('Please move your head to the right.'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: const Text('OK'),
+              ),
+            ],
+          );
+        },
+      );
+    }
+  }
+
+  void _onHeadMovedRight() {
     if (mounted) {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => SecondPage()),
+        MaterialPageRoute(
+          builder: (context) => SecondPage(
+            onReturn: _resetStates, // Pass reset callback to SecondPage
+          ),
+        ),
       );
     }
+  }
+
+  // New method to reset all states
+  void _resetStates() {
+    setState(() {
+      _isFaceDetected = false;
+      _eyesClosedDetected = false;
+      _headMovedRight = false;
+      _isDetecting = false;
+    });
   }
 
   InputImage _getInputImage(CameraImage cameraImage) {
@@ -155,12 +190,10 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
       allBytes.putUint8List(plane.bytes);
     }
     final bytes = allBytes.done().buffer.asUint8List();
-
-    // Metadata for ML Kit's InputImage
     final InputImageMetadata metadata = InputImageMetadata(
       size: Size(cameraImage.width.toDouble(), cameraImage.height.toDouble()),
-      rotation: InputImageRotation.rotation0deg, // Adjust if necessary
-      format: InputImageFormat.nv21, // Use nv21 or the appropriate format
+      rotation: InputImageRotation.rotation0deg,
+      format: InputImageFormat.nv21,
       bytesPerRow: cameraImage.planes[0].bytesPerRow,
     );
 
@@ -185,45 +218,88 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Face Detection & Eye Closure')),
-      body: Stack(
-        children: [
-          if (_controller != null && _controller!.value.isInitialized)
-            CameraPreview(_controller!),
-          Positioned(
-            top: 20,
-            left: 20,
-            child: Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: Colors.black54,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Face Detected: ${_isFaceDetected ? 'Yes' : 'No'}',
-                    style: const TextStyle(color: Colors.white),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          child: Stack(
+            children: [
+              if (_controller != null && _controller!.value.isInitialized)
+                Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(_isFaceDetected? 12:11),
+                    border: Border.all(
+                      width: _isFaceDetected? 2:1, color:_isFaceDetected? Colors.green :Colors.red
+                    )
                   ),
-                ],
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: CameraPreview(_controller!)),
+                ),
+              Positioned(
+                top: 22,
+                left: 20,
+                child: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.black54,
+                    borderRadius: BorderRadius.circular(5),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          Icon(_eyesClosedDetected ? Icons.done: Icons.close,color: _eyesClosedDetected ? Colors.green :Colors.red,size: 16,),
+                          SizedBox(width: 10,),
+                          Text(
+                            'Blink Detected',
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 5,),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          Icon(_headMovedRight ? Icons.done: Icons.close,color: _headMovedRight ? Colors.green :Colors.red,size: 16,),
+                          SizedBox(width: 10,),
+                          Text(
+                            'Head Movement',
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 }
 
 class SecondPage extends StatelessWidget {
-  const SecondPage({super.key});
+  final VoidCallback onReturn;
+
+  const SecondPage({super.key, required this.onReturn});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Second Page')),
-      body: const Center(child: Text('Eyes were closed!')),
+      appBar: AppBar(
+        title: const Text('Second Page'),
+        leading: BackButton(
+          onPressed: () {
+            onReturn();
+            Navigator.of(context).pop();
+          },
+        ),
+      ),
+      body: const Center(child: Text('Eyes were closed and head moved right!')),
     );
   }
 }
