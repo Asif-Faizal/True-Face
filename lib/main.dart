@@ -167,21 +167,13 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
         context,
         MaterialPageRoute(
           builder: (context) => SecondPage(
-            onReturn: _resetStates, // Pass reset callback to SecondPage
+            onReturn: (){
+              Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context)=>CameraPage(camera: widget.camera)));
+            }, // Pass reset callback to SecondPage
           ),
         ),
       );
     }
-  }
-
-  // New method to reset all states
-  void _resetStates() {
-    setState(() {
-      _isFaceDetected = false;
-      _eyesClosedDetected = false;
-      _headMovedRight = false;
-      _isDetecting = false;
-    });
   }
 
   InputImage _getInputImage(CameraImage cameraImage) {
