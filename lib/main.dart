@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:liveliness_checker/camera_screen.dart';
+import 'package:liveliness_checker/view/camera_screen.dart';
 import 'package:provider/provider.dart';
 
 import 'view_model/camera_view_model.dart';

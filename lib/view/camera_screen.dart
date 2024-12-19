@@ -1,10 +1,10 @@
-// screens/camera_page.dart
 import 'package:flutter/material.dart';
-import 'package:liveliness_checker/second_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:camera/camera.dart';
 
-import 'view_model/camera_view_model.dart';
+import '../view_model/camera_view_model.dart';
+import 'second_screen.dart';
+
 
 class CameraPage extends StatelessWidget {
   const CameraPage({super.key});
@@ -16,20 +16,25 @@ class CameraPage extends StatelessWidget {
       child: Scaffold(
         body: Consumer<CameraViewModel>(
           builder: (context, viewModel, child) {
-            if (viewModel.controller == null || !viewModel.controller!.value.isInitialized&& !viewModel.hasNavigated) {
+            // Ensure the controller is not null and is initialized before accessing the CameraPreview
+            if (viewModel.controller == null || !viewModel.controller!.value.isInitialized) {
               return const Center(child: CircularProgressIndicator());
             }
-            viewModel.checkForNavigation();
-             if (viewModel.eyesClosedDetected && viewModel.headMovedRight) {
-              // Navigate to another page if both are true
+
+            // Check if we need to navigate and do so after the build phase
+            if (viewModel.eyesClosedDetected && viewModel.headMovedRight && !viewModel.hasNavigated) {
               WidgetsBinding.instance.addPostFrameCallback((_) {
+                viewModel.setNavigated(true); // Set navigation status after the build phase
+
+                // Navigate to the next page
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const SecondPage()), // AnotherPage is the page you want to navigate to.
+                  MaterialPageRoute(builder: (context) => const SecondPage()),
                 );
+
+                // Dispose camera resources after navigation
+                viewModel.disposeCamera();
               });
-              // viewModel.disposeCamera();
-              // viewModel.dispose();
             }
 
             return Center(

@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'view_model/camera_view_model.dart';
+import '../view_model/camera_view_model.dart';
 
 class SecondPage extends StatelessWidget {
 
@@ -11,7 +11,7 @@ class SecondPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (context) => CameraViewModel()..dispose(),
+      create: (context) => CameraViewModel()..diposeController(),
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Second Page'),

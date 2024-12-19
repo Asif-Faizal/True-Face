@@ -1,4 +1,3 @@
-// viewmodels/camera_viewmodel.dart
 import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
@@ -76,15 +75,19 @@ class CameraViewModel extends ChangeNotifier {
     }
   }
 
+  void setNavigated(bool value) {
+    _hasNavigated = value;
+    notifyListeners();
+  }
+
   void checkForNavigation() {
     if (eyesClosedDetected && headMovedRight && !_hasNavigated) {
-      _hasNavigated = true;
-      notifyListeners(); // Notify listeners to trigger navigation
+      setNavigated(true);  // Set navigation status
     }
   }
 
   void _processCameraImage(CameraImage cameraImage) async {
-    if (_isDetecting || _controller == null || _hasNavigated) return;
+    if (_isDetecting || _controller == null) return;
     _isDetecting = true;
 
     try {
@@ -144,7 +147,10 @@ class CameraViewModel extends ChangeNotifier {
   }
 
   void disposeCamera() {
-    _controller?.dispose();
+    // _controller?.dispose();
     _faceDetector?.close();
+  }
+  void diposeController(){
+    _controller?.dispose();
   }
 }
