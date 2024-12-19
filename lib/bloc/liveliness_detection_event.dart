@@ -1,22 +1,25 @@
 part of 'liveliness_detection_bloc.dart';
 
-sealed class LivelinessDetectionEvent extends Equatable {
-  const LivelinessDetectionEvent();
-
+abstract class LivelinessEvent extends Equatable {
   @override
-  List<Object> get props => [];
-}
-class StartCameraEvent extends LivelinessDetectionEvent {}
-
-class ProcessCameraImageEvent extends LivelinessDetectionEvent {
-  final CameraImage cameraImage;
-
-  const ProcessCameraImageEvent(this.cameraImage);
-
-  @override
-  List<Object> get props => [cameraImage];
+  List<Object?> get props => [];
 }
 
-class EyesClosedDetectedEvent extends LivelinessDetectionEvent {}
+class StartLivelinessDetection extends LivelinessEvent {}
 
-class HeadMovedRightDetectedEvent extends LivelinessDetectionEvent {}
+class StopLivelinessDetection extends LivelinessEvent {}
+
+class FaceDetectedEvent extends LivelinessEvent {}
+
+class BlinkDetectedEvent extends LivelinessEvent {}
+
+class HeadMovementDetectedEvent extends LivelinessEvent {}
+
+class LivelinessErrorEvent extends LivelinessEvent {
+  final String message;
+
+  LivelinessErrorEvent(this.message);
+
+  @override
+  List<Object?> get props => [message];
+}

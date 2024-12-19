@@ -1,4 +1,3 @@
-
 import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -109,7 +108,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
           setState(() {
             _eyesClosedDetected = true;
           });
-          _onEyesClosed();
+          // _onEyesClosed();
         }
 
         if (_eyesClosedDetected) {
@@ -124,6 +123,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
             await _controller!.stopImageStream();
           }
         }
+      } else {
       }
     } catch (e) {
       debugPrint('Error processing camera image: $e');
@@ -132,15 +132,15 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
     }
   }
 
-  void _onEyesClosed() {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        backgroundColor: Colors.green,
-        behavior: SnackBarBehavior.floating,
-        content: Text('Blink has been detected'),
-      ));
-    }
-  }
+  // void _onEyesClosed() {
+  //   if (mounted) {
+  //     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+  //       backgroundColor: Colors.green,
+  //       behavior: SnackBarBehavior.floating,
+  //       content: Text('Blink has been detected'),
+  //     ));
+  //   }
+  // }
 
   void _onHeadMovedRight() {
     if (mounted) {
@@ -222,6 +222,22 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      if (!_isFaceDetected)
+                        const Text(
+                          'Face not detected',
+                          style: TextStyle(color: Colors.red),
+                        )
+                      else if (!_eyesClosedDetected)
+                        const Text(
+                          'Please blink',
+                          style: TextStyle(color: Colors.yellow),
+                        )
+                      else if (_eyesClosedDetected && !_headMovedRight)
+                        const Text(
+                          'Please rotate your head to the left',
+                          style: TextStyle(color: Colors.yellow),
+                        ),
+                      const SizedBox(height: 5),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.start,
                         children: [

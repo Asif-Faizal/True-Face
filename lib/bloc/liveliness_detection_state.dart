@@ -1,18 +1,25 @@
 part of 'liveliness_detection_bloc.dart';
 
-sealed class LivelinessDetectionState extends Equatable {
-  const LivelinessDetectionState();
-  
+abstract class LivelinessState extends Equatable {
   @override
-  List<Object> get props => [];
+  List<Object?> get props => [];
 }
 
-class CameraInitializingState extends LivelinessDetectionState {}
+class LivelinessInitial extends LivelinessState {}
 
-class CameraInitializedState extends LivelinessDetectionState {}
+class LivelinessLoading extends LivelinessState {}
 
-class FaceDetectedState extends LivelinessDetectionState {}
+class FaceDetected extends LivelinessState {}
 
-class EyesClosedState extends LivelinessDetectionState {}
+class BlinkDetected extends LivelinessState {}
 
-class HeadMovedRightState extends LivelinessDetectionState {}
+class HeadMovementDetected extends LivelinessState {}
+
+class LivelinessError extends LivelinessState {
+  final String message;
+
+  LivelinessError(this.message);
+
+  @override
+  List<Object?> get props => [message];
+}
