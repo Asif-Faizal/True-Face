@@ -15,7 +15,6 @@ class CameraViewModel extends ChangeNotifier {
 
   CameraController? get controller => _controller;
 
-  // Getter for navigation status
   bool get hasNavigated => _hasNavigated;
   bool get isFaceDetected => _isFaceDetected;
   bool get eyesClosedDetected => _eyesClosedDetected;
@@ -82,7 +81,7 @@ class CameraViewModel extends ChangeNotifier {
 
   void checkForNavigation() {
     if (eyesClosedDetected && headMovedRight && !_hasNavigated) {
-      setNavigated(true);  // Set navigation status
+      setNavigated(true); // Set navigation status
     }
   }
 
@@ -147,10 +146,10 @@ class CameraViewModel extends ChangeNotifier {
   }
 
   void disposeCamera() {
-    // _controller?.dispose();
     _faceDetector?.close();
   }
-  void diposeController(){
+
+  void diposeController() {
     _controller?.dispose();
   }
 }

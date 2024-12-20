@@ -16,23 +16,16 @@ class CameraPage extends StatelessWidget {
       child: Scaffold(
         body: Consumer<CameraViewModel>(
           builder: (context, viewModel, child) {
-            // Ensure the controller is not null and is initialized before accessing the CameraPreview
             if (viewModel.controller == null || !viewModel.controller!.value.isInitialized) {
               return const Center(child: CircularProgressIndicator());
             }
-
-            // Check if we need to navigate and do so after the build phase
             if (viewModel.eyesClosedDetected && viewModel.headMovedRight && !viewModel.hasNavigated) {
               WidgetsBinding.instance.addPostFrameCallback((_) {
-                viewModel.setNavigated(true); // Set navigation status after the build phase
-
-                // Navigate to the next page
+                viewModel.setNavigated(true);
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const SecondPage()),
                 );
-
-                // Dispose camera resources after navigation
                 viewModel.disposeCamera();
               });
             }
