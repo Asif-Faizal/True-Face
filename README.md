@@ -33,9 +33,16 @@ This app is ideal for various industries and applications, including:
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/yourusername/Liveliness-Detection-App.git
-   cd Liveliness-Detection-App
+   git clone https://github.com/Asif-Faizal/True-Face.git
+   ```
+   ```bash
+   cd True-Face
+   ```
+   ```bash
    flutter pub get
+   ```
+   ```bash
+   flutter run
    ```
 
 ## License
