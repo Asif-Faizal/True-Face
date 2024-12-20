@@ -35,4 +35,9 @@ This app is ideal for various industries and applications, including:
    ```bash
    git clone https://github.com/yourusername/Liveliness-Detection-App.git
    cd Liveliness-Detection-App
+   flutter pub get
    ```
+
+## License
+
+This project is licensed under the MIT License
